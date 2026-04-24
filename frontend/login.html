@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login - AgriTrace</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #4CAF50, #2E7D32);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #388E3C;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .link a {
+      text-decoration: none;
+      color: #2E7D32;
+    }
+
+    #msg {
+      text-align: center;
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>🌾 Login</h2>
+
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+
+  <p id="msg"></p>
+
+  <div class="link">
+    <a href="signup.html">Create new account</a>
+  </div>
+</div>
+
+<script>
+  if(localStorage.getItem("user")){
+  window.location.href = "farmer.html";
+}
+async function login() {
+  const res = await fetch("http://localhost:3000/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      username: username.value,
+      password: password.value
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.message) {
+    localStorage.setItem("user", username.value);
+    window.location.href = "farmer.html";
+  } else {
+    document.getElementById("msg").innerText = data.error;
+  }
+}
+</script>
+
+</body>
+</html>

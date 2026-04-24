@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <title>AgriTrace Dashboard</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #56ab2f, #a8e063);
+    }
+
+    /* NAVBAR */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 30px;
+      background: rgba(0,0,0,0.2);
+      color: white;
+      backdrop-filter: blur(10px);
+    }
+
+    .logout {
+      background: red;
+      border: none;
+      padding: 6px 12px;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* GLASS CARD */
+    .card {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(15px);
+      padding: 25px;
+      width: 320px;
+      border-radius: 15px;
+      margin: 30px auto;
+      color: white;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from {opacity:0; transform: translateY(20px);}
+      to {opacity:1;}
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #2E7D32;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    img {
+      width: 150px;
+      display: block;
+      margin: 10px auto;
+    }
+
+    /* TABLE */
+    .table-container {
+      width: 90%;
+      margin: 30px auto;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(15px);
+      border-radius: 15px;
+      padding: 20px;
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: rgba(0,0,0,0.3);
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* BADGES */
+    .verified {
+      color: #00ff88;
+      font-weight: bold;
+    }
+
+    .warning {
+      color: yellow;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <h2>🌾 AgriTrace</h2>
+  <div>
+    <span id="user"></span>
+    <button class="logout" onclick="logout()">Logout</button>
+    <button onclick="connectWallet()">Connect Wallet</button>
+  </div>
+</div>
+
+<!-- FORM -->
+<div class="card">
+  <h2>Add Crop</h2>
+
+  <input id="farmer" placeholder="Farmer Name">
+  <input id="crop" placeholder="Crop Name">
+  <input id="quantity" placeholder="Quantity">
+  <input id="price" placeholder="Price">
+  <input id="location" placeholder="Location">
+
+  <button onclick="submitData()">Submit</button>
+
+  <h3>QR Code</h3>
+  <div id="qr" style="margin-top: 10px;"></div>
+  <img id="qr">
+</div>
+
+<!-- HISTORY TABLE -->
+<div class="table-container">
+  <h2>📊 Crop History</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Farmer</th>
+        <th>Crop</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Market</th>
+        <th>Trust</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<script>
+  let contract;
+
+async function connectWallet() {
+  if (!window.ethereum) {
+    alert("Install MetaMask");
+    return;
+  }
+
+  const provider = new ethers.BrowserProvider(window.ethereum);
+
+  await provider.send("eth_requestAccounts", []);
+
+  const signer = await provider.getSigner();
+
+  const address = await signer.getAddress();
+
+  document.getElementById("user").innerText = "👛 " + address;
+
+  contract = new ethers.Contract(
+    "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    [
+      "function addCrop(string,string,uint256,string,uint256)"
+    ],
+    signer
+  );
+
+  alert("Wallet Connected!");
+}
+
+// username
+document.getElementById("user").innerText = localStorage.getItem("user");
+
+// logout
+function logout(){
+  localStorage.removeItem("user");
+  window.location.href = "login.html";
+}
+
+// add crop
+
+ async function submitData() {
+  try {
+    if (!contract) {
+      alert("Connect wallet first!");
+      return;
+    }
+
+    const farmerName = document.getElementById("farmer").value;
+    const cropName = document.getElementById("crop").value;
+    const qty = Number(document.getElementById("quantity").value);
+    const loc = document.getElementById("location").value;
+    const pr = Number(document.getElementById("price").value);
+
+    const tx = await contract.addCrop(
+      farmerName,
+      cropName,
+      qty,
+      loc,
+      pr
+    );
+
+    await tx.wait();
+     const base = " https://relapse-upstate-undermine.ngrok-free.dev";
+
+    // 🔥 GENERATE QR HERE
+   const url = `${base}/frontend/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${qty}&location=${encodeURIComponent(loc)}&price=${pr}`;
+    const qrDiv = document.getElementById("qr");
+
+    qrDiv.innerHTML = ""; // clear old
+
+    QRCode.toDataURL(url)
+  .then(data => {
+    document.getElementById("qr").innerHTML = `<img src="${data}" width="150"/>`;
+  })
+  .catch(err => console.error(err));
+
+    alert("Transaction + QR generated 🎉");
+
+  } catch (err) {
+    console.error(err);
+    alert("Transaction failed");
+  }
+}
+// load history
+async function loadHistory() {
+  const res = await fetch("http://localhost:3000/crops");
+  const data = await res.json();
+
+  const table = document.getElementById("tableBody");
+  table.innerHTML = "";
+
+  data.forEach(c => {
+    table.innerHTML += `
+      <tr>
+        <td>${c.farmerName}</td>
+        <td>${c.cropName}</td>
+        <td>${c.quantity}</td>
+        <td>₹${c.price}</td>
+        <td>₹${c.marketPrice}</td>
+        <td>${c.trustScore}</td>
+        <td class="${c.verified ? 'verified' : 'warning'}">
+          ${c.verified ? '✅ Verified' : c.warning}
+        </td>
+      </tr>
+    `;
+  });
+}
+
+// initial load
+loadHistory();
+
+</script>
+
+</body>
+</html>

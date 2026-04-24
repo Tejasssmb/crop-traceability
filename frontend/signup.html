@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Signup - AgriTrace</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #2196F3, #0D47A1);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #1565C0;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .link a {
+      text-decoration: none;
+      color: #0D47A1;
+    }
+
+    #msg {
+      text-align: center;
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>🌾 Signup</h2>
+
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="signup()">Create Account</button>
+
+  <p id="msg"></p>
+
+  <div class="link">
+    <a href="login.html">Already have account?</a>
+  </div>
+</div>
+
+<script>
+async function signup() {
+  const res = await fetch("http://localhost:3000/signup", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      username: username.value,
+      password: password.value
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.message) {
+    alert("Signup successful! Please login");
+    window.location.href = "login.html";
+  } else {
+    document.getElementById("msg").innerText = data.error;
+  }
+}
+</script>
+
+</body>
+</html>

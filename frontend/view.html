@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Crop Details</h2>
+
+<div id="data">Loading...</div>
+
+<script>
+try {
+  const query = window.location.search;
+
+  console.log("Query:", query); // DEBUG
+
+  const params = new URLSearchParams(query);
+
+  const farmer = params.get("farmer");
+  const crop = params.get("crop");
+  const quantity = params.get("quantity");
+  const location = params.get("location");
+  const price = params.get("price");
+
+  document.getElementById("data").innerHTML =
+    "Farmer: " + farmer + "<br>" +
+    "Crop: " + crop + "<br>" +
+    "Quantity: " + quantity + "<br>" +
+    "Location: " + location + "<br>" +
+    "Price: ₹" + price;
+
+} catch (e) {
+  console.error("ERROR:", e);
+  document.getElementById("data").innerText = "Error loading data";
+}
+</script>
+
+</body>
+</html>
