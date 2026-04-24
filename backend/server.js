@@ -7,18 +7,17 @@ let users = [];
 
 const app = express();
 
+
+app.get("/", (req, res) => {
+  res.send("Backend working ✅");
+});
 const cors = require("cors");
 
-app.use(cors({
-  origin: "https://crop-traceability-frontend.netlify.app",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-}));
-
-// 🔥 IMPORTANT: handle preflight manually
-app.options("*", cors());
+app.use(cors());
 app.use(express.json());
 
+// 🔥 handle preflight properly
+app.options("*", cors());
 // 🔗 Blockchain connection
 const provider = new ethers.JsonRpcProvider("http://localhost:8545");
 
