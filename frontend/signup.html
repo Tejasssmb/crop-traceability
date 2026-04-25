@@ -19,19 +19,12 @@
       padding: 30px;
       border-radius: 10px;
       width: 300px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-
-    h2 {
-      text-align: center;
     }
 
     input {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
     }
 
     button {
@@ -40,29 +33,9 @@
       background: #2196F3;
       color: white;
       border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
     }
 
-    button:hover {
-      background: #1565C0;
-    }
-
-    .link {
-      text-align: center;
-      margin-top: 10px;
-    }
-
-    .link a {
-      text-decoration: none;
-      color: #0D47A1;
-    }
-
-    #msg {
-      text-align: center;
-      color: red;
-    }
+    #msg { color:red; text-align:center; }
   </style>
 </head>
 
@@ -78,29 +51,27 @@
 
   <p id="msg"></p>
 
-  <div class="link">
-    <a href="login.html">Already have account?</a>
-  </div>
+  <a href="login.html">Already have account?</a>
 </div>
 
 <script>
-async function signup() {
-  const res = await fetch("https://crop-backend-1im3.onrender.com/signup", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
+async function signup(){
+  const username=document.getElementById("username").value;
+  const password=document.getElementById("password").value;
+
+  const res=await fetch("https://crop-backend-1im3.onrender.com/signup",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
   });
 
-  const data = await res.json();
+  const data=await res.json();
 
-  if (data.message) {
-    alert("Signup successful! Please login");
-    window.location.href = "login.html";
-  } else {
-    document.getElementById("msg").innerText = data.error;
+  if(data.message){
+    alert("Signup success");
+    window.location.href="login.html";
+  }else{
+    document.getElementById("msg").innerText=data.error;
   }
 }
 </script>

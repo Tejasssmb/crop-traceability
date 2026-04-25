@@ -22,9 +22,7 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
 
-    h2 {
-      text-align: center;
-    }
+    h2 { text-align: center; }
 
     input {
       width: 100%;
@@ -42,27 +40,9 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      margin-top: 10px;
     }
 
-    button:hover {
-      background: #388E3C;
-    }
-
-    .link {
-      text-align: center;
-      margin-top: 10px;
-    }
-
-    .link a {
-      text-decoration: none;
-      color: #2E7D32;
-    }
-
-    #msg {
-      text-align: center;
-      color: red;
-    }
+    #msg { text-align: center; color: red; }
   </style>
 </head>
 
@@ -78,32 +58,35 @@
 
   <p id="msg"></p>
 
-  <div class="link">
-    <a href="signup.html">Create new account</a>
-  </div>
+  <a href="signup.html">Create new account</a>
 </div>
 
 <script>
-  if(localStorage.getItem("user")){
+if(localStorage.getItem("user")){
   window.location.href = "farmer.html";
 }
-async function login() {
-  const res = await fetch("https://crop-backend-1im3.onrender.com/login", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  });
 
-  const data = await res.json();
+async function login(){
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
-  if (data.message) {
-    localStorage.setItem("user", username.value);
-    window.location.href = "farmer.html";
-  } else {
-    document.getElementById("msg").innerText = data.error;
+  try{
+    const res = await fetch("https://crop-backend-1im3.onrender.com/login",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({username,password})
+    });
+
+    const data = await res.json();
+
+    if(data.message){
+      localStorage.setItem("user",username);
+      window.location.href="farmer.html";
+    }else{
+      document.getElementById("msg").innerText=data.error;
+    }
+  }catch{
+    document.getElementById("msg").innerText="Server error";
   }
 }
 </script>

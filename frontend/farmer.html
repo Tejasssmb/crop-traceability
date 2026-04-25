@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
 <head>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
@@ -12,7 +13,6 @@
       background: linear-gradient(135deg, #56ab2f, #a8e063);
     }
 
-    /* NAVBAR */
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -31,7 +31,6 @@
       cursor: pointer;
     }
 
-    /* GLASS CARD */
     .card {
       background: rgba(255,255,255,0.2);
       backdrop-filter: blur(15px);
@@ -73,7 +72,6 @@
       margin: 10px auto;
     }
 
-    /* TABLE */
     .table-container {
       width: 90%;
       margin: 30px auto;
@@ -102,7 +100,6 @@
       background: rgba(255,255,255,0.2);
     }
 
-    /* BADGES */
     .verified {
       color: #00ff88;
       font-weight: bold;
@@ -111,13 +108,12 @@
     .warning {
       color: yellow;
     }
-
   </style>
+
 </head>
 
 <body>
 
-<!-- NAVBAR -->
 <div class="navbar">
   <h2>🌾 AgriTrace</h2>
   <div>
@@ -127,7 +123,6 @@
   </div>
 </div>
 
-<!-- FORM -->
 <div class="card">
   <h2>Add Crop</h2>
 
@@ -137,14 +132,12 @@
   <input id="price" placeholder="Price">
   <input id="location" placeholder="Location">
 
-  <button onclick="submitData()">Submit</button>
+<button onclick="submitData()">Submit</button>
 
   <h3>QR Code</h3>
-  <div id="qr" style="margin-top: 10px;"></div>
-  <img id="qr">
+  <div id="qr"></div>
 </div>
 
-<!-- HISTORY TABLE -->
 <div class="table-container">
   <h2>📊 Crop History</h2>
 
@@ -161,42 +154,33 @@
       </tr>
     </thead>
 
-    <tbody id="tableBody"></tbody>
+```
+<tbody id="tableBody"></tbody>
+```
+
   </table>
 </div>
 
 <script>
-  let contract;
+let contract;
 
-//async function connectWallet() {
+// wallet (kept, but not required)
+async function connectWallet() {
   if (!window.ethereum) {
     alert("Install MetaMask");
     return;
   }
 
   const provider = new ethers.BrowserProvider(window.ethereum);
-
   await provider.send("eth_requestAccounts", []);
-
   const signer = await provider.getSigner();
-
   const address = await signer.getAddress();
 
   document.getElementById("user").innerText = "👛 " + address;
-
-  contract = new ethers.Contract(
-    "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    [
-      "function addCrop(string,string,uint256,string,uint256)"
-    ],
-    signer
-  );
-
-  alert("Wallet Connected!");
 }
 
-// username
-document.getElementById("user").innerText = localStorage.getItem("user");
+// username display
+document.getElementById("user").innerText = localStorage.getItem("user") || "";
 
 // logout
 function logout(){
@@ -204,74 +188,72 @@ function logout(){
   window.location.href = "login.html";
 }
 
-// add crop
-
- async function submitData() {
+// submit (FIXED — uses backend)
+async function submitData() {
   try {
-    if (!contract) {
-      alert("Connect wallet first!");
-      return;
-    }
-
     const farmerName = document.getElementById("farmer").value;
     const cropName = document.getElementById("crop").value;
     const qty = Number(document.getElementById("quantity").value);
     const loc = document.getElementById("location").value;
     const pr = Number(document.getElementById("price").value);
 
-    const tx = await contract.addCrop(
-      farmerName,
-      cropName,
-      qty,
-      loc,
-      pr
-    );
+    const res = await fetch("https://crop-backend-1im3.onrender.com/addCrop", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        farmer: farmerName,
+        crop: cropName,
+        quantity: qty,
+        location: loc,
+        price: pr
+      })
+    });
 
-    await tx.wait();
-     const base = " https://relapse-upstate-undermine.ngrok-free.dev";
+    const data = await res.json();
 
-    // 🔥 GENERATE QR HERE
-   const url = `${base}/frontend/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${qty}&location=${encodeURIComponent(loc)}&price=${pr}`;
-    const qrDiv = document.getElementById("qr");
+    document.getElementById("qr").innerHTML =
+      `<img src="${data.qr}" />`;
 
-    qrDiv.innerHTML = ""; // clear old
+    alert("Crop added successfully");
 
-    QRCode.toDataURL(url)
-  .then(data => {
-    document.getElementById("qr").innerHTML = `<img src="${data}" width="150"/>`;
-  })
-  .catch(err => console.error(err));
-
-    alert("Transaction + QR generated 🎉");
+    loadHistory();
 
   } catch (err) {
     console.error(err);
-    alert("Transaction failed");
+    alert("Error submitting");
   }
 }
-// load history
+
+// load history (FIXED)
 async function loadHistory() {
-  const res = await fetch("https://crop-backend-1im3.onrender.com/crops");
-  const data = await res.json();
+  try {
+    const res = await fetch("https://crop-backend-1im3.onrender.com/crops");
+    const data = await res.json();
 
-  const table = document.getElementById("tableBody");
-  table.innerHTML = "";
+    const table = document.getElementById("tableBody");
+    table.innerHTML = "";
 
-  data.forEach(c => {
-    table.innerHTML += `
-      <tr>
-        <td>${c.farmerName}</td>
-        <td>${c.cropName}</td>
-        <td>${c.quantity}</td>
-        <td>₹${c.price}</td>
-        <td>₹${c.marketPrice}</td>
-        <td>${c.trustScore}</td>
-        <td class="${c.verified ? 'verified' : 'warning'}">
-          ${c.verified ? '✅ Verified' : c.warning}
-        </td>
-      </tr>
-    `;
-  });
+    if (!Array.isArray(data)) return;
+
+    data.forEach(c => {
+      table.innerHTML += `
+        <tr>
+          <td>${c.farmerName}</td>
+          <td>${c.cropName}</td>
+          <td>${c.quantity}</td>
+          <td>₹${c.price}</td>
+          <td>₹${c.marketPrice}</td>
+          <td>${c.trustScore}</td>
+          <td class="${c.verified ? 'verified' : 'warning'}">
+            ${c.verified ? '✅ Verified' : '⚠'}
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 // initial load
