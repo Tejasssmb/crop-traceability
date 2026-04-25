@@ -10,9 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 // ✅ Handle preflight (fixes your error)
-app.options("*", (req, res) => {
-  res.sendStatus(200);
-});
+
 
 // ✅ TEST ROUTE
 app.get("/", (req, res) => {
