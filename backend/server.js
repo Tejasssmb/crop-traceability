@@ -3,22 +3,29 @@ const { ethers } = require("ethers");
 const QRCode = require("qrcode");
 const cors = require("cors");
 
-let users = [];
-
 const app = express();
 
-
-app.get("/", (req, res) => {
-  res.send("Backend working ✅");
-});
-const cors = require("cors");
-
+// ✅ CORS (IMPORTANT)
 app.use(cors());
 app.use(express.json());
 
-// 🔥 handle preflight properly
-app.options("*", cors());
-// 🔗 Blockchain connection
+// ✅ Handle preflight (fixes your error)
+app.options("*", (req, res) => {
+  res.sendStatus(200);
+});
+
+// ✅ TEST ROUTE
+app.get("/", (req, res) => {
+  res.send("Backend working ✅");
+});
+
+// ================= USERS =================
+let users = [];
+
+// ================= BLOCKCHAIN =================
+
+// ⚠️ NOTE: This will NOT work on Render (localhost issue)
+// but keeping your code as is
 const provider = new ethers.JsonRpcProvider("http://localhost:8545");
 
 const privateKey =
@@ -26,7 +33,6 @@ const privateKey =
 
 const wallet = new ethers.Wallet(privateKey, provider);
 
-// ⚠️ MAKE SURE THIS IS LATEST DEPLOYED ADDRESS
 const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 const abi = [
@@ -36,16 +42,16 @@ const abi = [
 
 const contract = new ethers.Contract(contractAddress, abi, wallet);
 
-// 🚀 ADD CROP
+// ================= ADD CROP =================
+
 app.post("/addCrop", async (req, res) => {
   try {
-    console.log("DATA RECEIVED:", req.body);
     const farmerName = req.body.farmer || "";
-const cropName = req.body.crop || "";
-const quantity = Number(req.body.quantity) || 0;
-const location = req.body.location || "";
-const price = Number(req.body.price) || 0;
-console.log("FINAL VALUES:", farmerName, cropName, quantity, location, price);
+    const cropName = req.body.crop || "";
+    const quantity = Number(req.body.quantity) || 0;
+    const location = req.body.location || "";
+    const price = Number(req.body.price) || 0;
+
     const tx = await contract.addCrop(
       farmerName,
       cropName,
@@ -53,30 +59,18 @@ console.log("FINAL VALUES:", farmerName, cropName, quantity, location, price);
       location,
       price
     );
+
     await tx.wait();
 
-    // 🟢 SAFE ID GENERATION (NO getCrops dependency)
-    const id = Date.now(); // unique ID
+    const url = `https://crop-traceability-frontend.netlify.app/frontend/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${quantity}&location=${encodeURIComponent(location)}&price=${price}`;
 
-   const dataObj = {
-  farmer: farmerName,
-  crop: cropName,
-  quantity,
-  location,
-  price
-};
-const base = "https://relapse-upstate-undermine.ngrok-free.dev";
-const url = `${base}/frontend/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${quantity}&location=${encodeURIComponent(location)}&price=${price}`;
     let qr;
 
-try {
-  qr = await QRCode.toDataURL(url);
-} catch (err) {
-  console.log("QR failed, using fallback");
-
-  // fallback QR (simple image)
-  qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
-}
+    try {
+      qr = await QRCode.toDataURL(url);
+    } catch {
+      qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
+    }
 
     res.json({
       message: "Crop added successfully",
@@ -84,19 +78,21 @@ try {
     });
 
   } catch (err) {
-    console.error("ERROR:", err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 📊 MARKET PRICE
+// ================= MARKET =================
+
 const MARKET_PRICE = {
   Rice: 50,
   Wheat: 40,
   Tomato: 30
 };
 
-// 📦 GET CROPS
+// ================= GET CROPS =================
+
 app.get("/crops", async (req, res) => {
   try {
     const data = await contract.getCrops();
@@ -137,12 +133,13 @@ app.get("/crops", async (req, res) => {
     res.json(formatted);
 
   } catch (err) {
-    console.error("GET CROPS ERROR:", err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 👤 SIGNUP
+// ================= AUTH =================
+
 app.post("/signup", (req, res) => {
   const { username, password } = req.body;
 
@@ -157,7 +154,6 @@ app.post("/signup", (req, res) => {
   res.json({ message: "Signup successful" });
 });
 
-// 🔐 LOGIN
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -172,7 +168,10 @@ app.post("/login", (req, res) => {
   res.json({ message: "Login successful" });
 });
 
-// 🚀 START SERVER
-app.listen(3000, "0.0.0.0", () => {
-  console.log("🚀 Server running on http://0.0.0.0:3000");
+// ================= SERVER =================
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
