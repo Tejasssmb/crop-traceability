@@ -21,12 +21,12 @@ let users = [];
 
 // ⚠️ NOTE: This will NOT work on Render (localhost issue)
 // but keeping your code as is
-const provider = new ethers.JsonRpcProvider("http://localhost:8545");
+//const provider = new ethers.JsonRpcProvider("http://localhost:8545");
 
 const privateKey =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
-const wallet = new ethers.Wallet(privateKey, provider);
+//const wallet = new ethers.Wallet(privateKey, provider);
 
 const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
@@ -35,9 +35,11 @@ const abi = [
   "function getCrops() view returns (tuple(string,string,uint256,string,uint256,uint256)[])"
 ];
 
-const contract = new ethers.Contract(contractAddress, abi, wallet);
+//const contract = new ethers.Contract(contractAddress, abi, wallet);
 
 // ================= ADD CROP =================
+
+let crops = [];
 
 app.post("/addCrop", async (req, res) => {
   try {
@@ -47,25 +49,22 @@ app.post("/addCrop", async (req, res) => {
     const location = req.body.location || "";
     const price = Number(req.body.price) || 0;
 
-    const tx = await contract.addCrop(
+    const newCrop = {
       farmerName,
       cropName,
       quantity,
       location,
-      price
-    );
+      price,
+      marketPrice: 50,
+      verified: true,
+      trustScore: "⭐⭐⭐⭐"
+    };
 
-    await tx.wait();
+    crops.push(newCrop);
 
-    const url = `https://crop-traceability-frontend.netlify.app/frontend/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${quantity}&location=${encodeURIComponent(location)}&price=${price}`;
+    const url = `https://crop-traceability-frontend.netlify.app/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${quantity}&location=${encodeURIComponent(location)}&price=${price}`;
 
-    let qr;
-
-    try {
-      qr = await QRCode.toDataURL(url);
-    } catch {
-      qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
-    }
+    const qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
 
     res.json({
       message: "Crop added successfully",
@@ -77,7 +76,6 @@ app.post("/addCrop", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // ================= MARKET =================
 
 const MARKET_PRICE = {
@@ -87,52 +85,9 @@ const MARKET_PRICE = {
 };
 
 // ================= GET CROPS =================
-
-app.get("/crops", async (req, res) => {
-  try {
-    const data = await contract.getCrops();
-
-    const formatted = data.map(crop => {
-      const farmerPrice = Number(crop[4]);
-      const marketPrice = MARKET_PRICE[crop[1]] || 50;
-
-      let diff = Math.abs(farmerPrice - marketPrice);
-      let trustScore = "";
-
-      if (diff < 10) trustScore = "⭐⭐⭐⭐⭐";
-      else if (diff < 30) trustScore = "⭐⭐⭐⭐";
-      else if (diff < 60) trustScore = "⭐⭐⭐";
-      else trustScore = "⭐⭐";
-
-      let verified = true;
-      let warning = "";
-
-      if (farmerPrice > marketPrice * 1.5) {
-        verified = false;
-        warning = "⚠ Price unusually high";
-      }
-
-      return {
-        farmerName: crop[0],
-        cropName: crop[1],
-        quantity: Number(crop[2]),
-        location: crop[3],
-        price: farmerPrice,
-        marketPrice,
-        warning,
-        verified,
-        trustScore
-      };
-    });
-
-    res.json(formatted);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+app.get("/crops", (req, res) => {
+  res.json(crops);
 });
-
 // ================= AUTH =================
 
 app.post("/signup", (req, res) => {

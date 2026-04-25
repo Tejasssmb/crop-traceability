@@ -84,29 +84,41 @@
 </div>
 
 <script>
-  if(localStorage.getItem("user")){
-  window.location.href = "farmer.html";
-}
-async function login() {
-  const res = await fetch("https://crop-backend.onrender.com/login", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  });
-
-  const data = await res.json();
-
-  if (data.message) {
-    localStorage.setItem("user", username.value);
+  if (localStorage.getItem("user")) {
     window.location.href = "farmer.html";
-  } else {
-    document.getElementById("msg").innerText = data.error;
   }
-}
-</script>
 
+  async function login() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      const res = await fetch("https://crop-backend-1im3.onrender.com/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password
+        })
+      });
+
+      const data = await res.json();
+      console.log("Response:", data);
+
+      if (data.message) {
+        localStorage.setItem("user", username);
+        window.location.href = "farmer.html";
+      } else {
+        document.getElementById("msg").innerText = data.error || "Login failed";
+      }
+
+    } catch (err) {
+      console.error("Error:", err);
+      document.getElementById("msg").innerText = "Server error";
+    }
+  }
+</script>
 </body>
 </html>

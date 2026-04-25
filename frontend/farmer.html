@@ -251,7 +251,7 @@ function logout(){
 }
 // load history
 async function loadHistory() {
-  const res = await fetch("https://crop-backend.onrender.com/crops");
+  const res = await fetch("https://crop-backend-1im3.onrender.com/crops");
   const data = await res.json();
 
   const table = document.getElementById("tableBody");
