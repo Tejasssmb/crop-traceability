@@ -1,11 +1,10 @@
 const express = require("express");
-const { ethers } = require("ethers");
 const QRCode = require("qrcode");
 const cors = require("cors");
 
 const app = express();
 
-// ✅ CORS (IMPORTANT)
+// ✅ MIDDLEWARE
 app.use(cors());
 app.use(express.json());
 
@@ -17,31 +16,11 @@ app.get("/", (req, res) => {
 // ================= USERS =================
 let users = [];
 
-// ================= BLOCKCHAIN =================
-
-// ⚠️ NOTE: This will NOT work on Render (localhost issue)
-// but keeping your code as is
-//const provider = new ethers.JsonRpcProvider("http://localhost:8545");
-
-const privateKey =
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-
-//const wallet = new ethers.Wallet(privateKey, provider);
-
-const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-
-const abi = [
-  "function addCrop(string,string,uint256,string,uint256)",
-  "function getCrops() view returns (tuple(string,string,uint256,string,uint256,uint256)[])"
-];
-
-//const contract = new ethers.Contract(contractAddress, abi, wallet);
-
-// ================= ADD CROP =================
-
+// ================= CROPS (NO BLOCKCHAIN) =================
 let crops = [];
 
-app.post("/addCrop", async (req, res) => {
+// ================= ADD CROP =================
+app.post("/addCrop", (req, res) => {
   try {
     const farmerName = req.body.farmer || "";
     const cropName = req.body.crop || "";
@@ -62,6 +41,7 @@ app.post("/addCrop", async (req, res) => {
 
     crops.push(newCrop);
 
+    // ✅ QR URL (your deployed frontend)
     const url = `https://crop-traceability-frontend.netlify.app/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${quantity}&location=${encodeURIComponent(location)}&price=${price}`;
 
     const qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
@@ -72,24 +52,17 @@ app.post("/addCrop", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("ADD CROP ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
-// ================= MARKET =================
-
-const MARKET_PRICE = {
-  Rice: 50,
-  Wheat: 40,
-  Tomato: 30
-};
 
 // ================= GET CROPS =================
 app.get("/crops", (req, res) => {
-  res.json(crops);
+  res.json(crops); // always returns array ✅
 });
-// ================= AUTH =================
 
+// ================= AUTH =================
 app.post("/signup", (req, res) => {
   const { username, password } = req.body;
 
@@ -119,7 +92,6 @@ app.post("/login", (req, res) => {
 });
 
 // ================= SERVER =================
-
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
