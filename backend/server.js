@@ -42,8 +42,7 @@ app.post("/addCrop", async(req, res) => {
     crops.push(newCrop);
 
     // ✅ QR URL (your deployed frontend)
-    const url = `https://crop-traceability-frontend.netlify.app/frontend/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${quantity}&location=${encodeURIComponent(location)}&price=${price}`;
-
+    const url = `https://crop-traceability.netlify.app/view.html?farmer=${encodeURIComponent(farmerName)}&crop=${encodeURIComponent(cropName)}&quantity=${quantity}&location=${encodeURIComponent(location)}&price=${price}`;
    const qr = await QRCode.toDataURL(url);
 
     res.json({
